@@ -104,6 +104,8 @@ php artisan migrate:fresh --seed
 
 # Storage setup
 php artisan storage:link
+
+# Alternatively you could dockerize the application for installation ease in the /docker dir
 ```
 
 ### Default Login Credentials
