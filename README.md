@@ -106,6 +106,17 @@ php artisan migrate:fresh --seed
 php artisan storage:link
 
 # Alternatively you could dockerize the application for installation ease in the /docker dir
+# Run docker setup bash script 
+chmod +x setup.sh
+./setup.sh
+
+# Run docker start bash script for initialization
+chmod +x start.sh
+./start.sh
+
+# Run docker logs bash script to view docker service logs
+chmod +x logs.sh
+./logs.sh
 ```
 
 ### Default Login Credentials
