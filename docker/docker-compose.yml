@@ -1,0 +1,142 @@
+# docker-compose.yml
+services:
+  app:
+    build: 
+      context: "."
+      dockerfile: Dockerfile
+      args: 
+        USER_ID: '${WWWUSER:-1000}'
+        GROUP_ID: '${WWWGROUP:-1000}' 
+        USER: '${USER:-whoami}'
+    container_name: ville_app
+    restart: unless-stopped
+    working_dir: /var/www/
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "9003:9003"  # XDebug port
+    volumes:
+      - ../:/var/www
+      - ./local.ini:/usr/local/etc/php/conf.d/local.ini
+    environment:
+      - PHP_IDE_CONFIG=serverName=localhost
+    networks:
+      - ville_network
+    depends_on:
+      - db
+      - redis
+
+  # Laravel Reverb WebSocket Server
+  reverb:
+    build: 
+      context: "."
+      dockerfile: Dockerfile
+      args: 
+        USER_ID: '${WWWUSER:-1000}'
+        GROUP_ID: '${WWWGROUP:-1000}' 
+        USER: '${USER:-whoami}'
+    container_name: ville_reverb
+    restart: unless-stopped
+    working_dir: /var/www/
+    ports:
+      - "8082:8082"  # Reverb WebSocket port
+    volumes:
+      - ../:/var/www
+      - ./local.ini:/usr/local/etc/php/conf.d/local.ini
+    command: php artisan reverb:start --host=0.0.0.0 --port=8082 --debug 
+    networks:
+      - ville_network
+    depends_on:
+      - db
+      - redis
+
+  nginx:
+    image: nginx:1.29-alpine
+    container_name: ville_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"      # Main HTTP port
+      - "443:443"    # HTTPS port
+      - "8081:8081"  # SSL proxy for Reverb
+    volumes:
+      - ../:/var/www
+      - ./nginx:/etc/nginx/conf.d
+      - ./ssl:/etc/nginx/ssl  # SSL certificates
+    networks:
+      - ville_network
+    depends_on:
+      - app
+      - reverb
+      - redis
+
+  # Varnish Cache Layer
+  varnish:
+    image: varnish:7.4
+    container_name: ville_varnish
+    restart: unless-stopped
+    ports:
+      - "8080:80"    # Varnish cache port
+    volumes:
+      - ./varnish/default.vcl:/etc/varnish/default.vcl
+    command: ["varnishd", "-F", "-f", "/etc/varnish/default.vcl", "-s", "malloc,256m", "-a", "0.0.0.0:80"]
+    networks:
+      - ville_network
+    depends_on:
+      - app
+
+  db:
+    container_name: ville_db
+    image: mysql:8.0
+    volumes:
+      - ./storage/mysql:/var/lib/mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes" 
+      MYSQL_DATABASE: socioville
+    ports:
+      - "3306:3306"
+    networks:
+      - ville_network
+
+  # Redis for caching and broadcasting
+  redis:
+    image: redis:7-alpine
+    container_name: ville_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./storage/redis:/data
+    command: redis-server --appendonly yes
+    networks:
+      - ville_network
+
+  # Queue Worker
+  queue:
+    build: 
+      context: "."
+      dockerfile: Dockerfile
+      args: 
+        USER_ID: '${WWWUSER:-1000}'
+        GROUP_ID: '${WWWGROUP:-1000}' 
+        USER: '${USER:-whoami}'
+    container_name: ville_queue
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ../:/var/www
+      - ./local.ini:/usr/local/etc/php/conf.d/local.ini
+    command: php artisan queue:work --verbose --tries=3 --timeout=90
+    networks:
+      - ville_network
+    depends_on:
+      - db
+      - redis
+
+networks:
+  ville_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
