@@ -10,13 +10,11 @@ A comprehensive, modern messaging application built with Laravel Reverb websocke
 
 See the project in action with these high-quality screenshots. Alternatively you can navigate to public/screenshots directory to view all the screenshots
 
-<!-- Replace the URLs below with your actual image links -->
 <div style="display: flex; flex-wrap: wrap; gap: 10px;">
   <img src="public/screenshots/Screenshot from 2025-07-31 17-13-05.png" alt="" style="flex: 1 1 calc(33.33% - 7px); max-width: 100%; height: auto; object-fit: cover;">
   <img src="public/screenshots/Screenshot from 2025-07-31 17-15-21.png" alt="" style="flex: 1 1 calc(33.33% - 7px); max-width: 100%; height: auto; object-fit: cover;">
   <img src="public/screenshots/Screenshot from 2025-07-31 17-20-51.png" alt="" style="flex: 1 1 calc(33.33% - 7px); max-width: 100%; height: auto; object-fit: cover;">
   <img src="public/screenshots/Screenshot from 2025-07-31 17-24-54.png" alt="" style="flex: 1 1 calc(33.33% - 7px); max-width: 100%; height: auto; object-fit: cover;">
-  
 </div>
 
 *Click on any image to view full size*
@@ -55,66 +53,71 @@ See the project in action with these high-quality screenshots. Alternatively you
 
 ## 🛠️ Tech Stack
 
-**Frontend:** 
+**Frontend:**
 - React 18+ with modern hooks
 - Inertia.js for seamless SPA experience
 - Tailwind CSS for responsive styling
 - Lucide React icons
 - Vite for fast development builds
 
-**Backend:** 
+**Backend:**
 - Laravel 11+ with modern PHP features
-- MySQL for reliable data storage
+- MySQL 8.0 for reliable data storage
 - Redis for caching and session management
 - Laravel Sanctum for API authentication
 - Laravel Queues for background processing
 
-**Real-time Communication:** 
+**Real-time Communication:**
 - Laravel Reverb for websocket broadcasting
 - Real-time message delivery
 - Live user presence indicators
 - Instant notification system
 
-## 🚀 Quick Start
+**Infrastructure:**
+- Docker & Docker Compose for containerized deployment
+- Nginx as reverse proxy and web server
+- Varnish cache layer for performance optimization
+- Supervisor for process management
+
+## 🚀 Quick Start with Docker (Recommended)
+
+The easiest way to run Ville is using Docker. The entire stack — PHP, MySQL, Redis, Nginx, Varnish, WebSockets, and Queue Worker — starts with a single command.
 
 ### Prerequisites
-- PHP 8.2+
-- Node.js 18+
-- MySQL 8.0+
-- Redis server
-- Composer
+- [Docker](https://docs.docker.com/get-docker/) installed
+- [Docker Compose](https://docs.docker.com/compose/install/) installed
+- Git
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ville-messenger-app.git
-cd ville-messenger-app
+git clone https://github.com/OburuO/ville-messenger-app.git
+cd ville-messenger-app/docker
 
-# Install dependencies
-composer install
-npm install
-
-# Environment setup
-cp .env.example .env
-php artisan key:generate
-
-# Database setup
-php artisan migrate:fresh --seed
-
-# Storage setup
-php artisan storage:link
-
-# Alternatively you could dockerize the application for installation ease in the /docker dir
-# Run docker setup bash script 
+# Run the setup script (generates SSL certs, creates .env, sets permissions)
 chmod +x setup.sh
 ./setup.sh
 
-# Run docker start bash script for initialization
+# Start all services
 chmod +x start.sh
 ./start.sh
+```
 
-# Run docker logs bash script to view docker service logs
+That's it! The following services will be running:
+
+| Service | URL |
+|---------|-----|
+| Main App | http://localhost |
+| App (HTTPS) | https://localhost |
+| WebSocket | wss://localhost:8081 |
+| Varnish Cache | http://localhost:8080 |
+| MySQL | localhost:3306 |
+| Redis | localhost:6379 |
+
+### View Logs
+
+```bash
 chmod +x logs.sh
 ./logs.sh
 ```
@@ -135,9 +138,38 @@ After running the database seeder, you can log in with these default accounts:
 
 > ⚠️ **Security Note:** Remember to change these default passwords in production environments!
 
-### Development Environment
+## 🔧 Manual Installation (Without Docker)
 
-Start all required services in separate terminals:
+### Prerequisites
+- PHP 8.2+
+- Node.js 18+
+- MySQL 8.0+
+- Redis server
+- Composer
+
+### Steps
+
+```bash
+# Clone the repository
+git clone https://github.com/OburuO/ville-messenger-app.git
+cd ville-messenger-app
+
+# Install dependencies
+composer install
+npm install
+
+# Environment setup
+cp .env.example .env
+php artisan key:generate
+
+# Database setup
+php artisan migrate:fresh --seed
+
+# Storage setup
+php artisan storage:link
+```
+
+### Start Development Services
 
 ```bash
 # Terminal 1 - Laravel development server
@@ -153,7 +185,7 @@ php artisan queue:listen
 npm run dev
 ```
 
-### Production Deployment
+### Production Build
 
 ```bash
 # Build frontend assets
@@ -169,11 +201,64 @@ php artisan reverb:start --host=0.0.0.0 --port=8080
 php artisan queue:work --daemon
 ```
 
+## 🔧 Configuration
+
+### Environment Variables
+
+```env
+# Application
+APP_NAME=Ville
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost
+
+# Database
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=socioville
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Redis
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+
+# Broadcasting (Reverb)
+BROADCAST_DRIVER=reverb
+REVERB_APP_ID=ville-app
+REVERB_APP_KEY=ville-key
+REVERB_APP_SECRET=ville-secret
+REVERB_HOST=localhost
+REVERB_PORT=8081
+REVERB_SCHEME=https
+
+# File Storage (local)
+FILESYSTEM_DISK=local
+```
+
+> 📁 **File Storage:** Ville uses local storage by default. Files are stored in the `storage/app/public` directory and served via Laravel's storage link.
+
+## 🏗️ Architecture
+
+Ville is built with a modern, scalable architecture:
+
+![Architecture](public/ville_architecture.svg)
+
+- **Frontend**: React SPA with Inertia.js for seamless navigation
+- **Backend**: Laravel API with robust authentication and authorization
+- **Real-time**: Laravel Reverb provides reliable websocket connections
+- **Database**: Optimized MySQL schema with proper indexing
+- **Caching**: Redis for session management and performance optimization
+- **Queue System**: Background job processing for resource-intensive operations
+- **Proxy**: Nginx reverse proxy with SSL termination
+- **Cache Layer**: Varnish for HTTP caching and performance
+
 ## 📱 User Experience
 
 ### Getting Started
-1. **User Registration** - Create your account with email verification or use the default credentials above for testing
-2. **Profile Setup** - Add your profile picture and personal details  
+1. **User Registration** - Create your account or use the default credentials above for testing
+2. **Profile Setup** - Add your profile picture and personal details
 3. **Discover Users** - Use the search feature to find and follow other users
 4. **Start Conversations** - Begin messaging directly from user profiles or create group chats
 5. **Rich Communication** - Share files, react to messages, and enjoy real-time interactions
@@ -185,49 +270,7 @@ php artisan queue:work --daemon
 - **Real-time Updates** - Instant message delivery and user status updates
 - **Rich Media Preview** - In-line previews for images, videos, and documents
 
-### Admin Features
-When logged in as an administrator (John Doe), you have access to:
-- User management dashboard
-- Ability to block/unblock users
-- Grant or revoke admin permissions
-- System-wide administrative controls
-
-## 🔧 Configuration
-
-### Environment Variables
-```env
-# Database
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=ville_messenger
-DB_USERNAME=your_username
-DB_PASSWORD=your_password
-
-# Broadcasting (Reverb)
-BROADCAST_DRIVER=reverb
-REVERB_APP_ID=your_app_id
-REVERB_APP_KEY=your_app_key
-REVERB_APP_SECRET=your_app_secret
-
-# File Storage
-FILESYSTEM_DISK=s3
-AWS_ACCESS_KEY_ID=your_aws_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret
-AWS_DEFAULT_REGION=us-east-1
-AWS_BUCKET=your_bucket_name
-```
-
-## 🏗️ Architecture
-
-Ville is built with a modern, scalable architecture:
-- **Frontend**: React SPA with Inertia.js for seamless navigation
-- **Backend**: Laravel API with robust authentication and authorization
-- **Real-time**: Laravel Reverb provides reliable websocket connections
-- **Database**: Optimized MySQL schema with proper indexing
-- **Caching**: Redis for session management and performance optimization
-- **Queue System**: Background job processing for resource-intensive operations
-
+---
 
 **Built by Brandon Oburu**
 
