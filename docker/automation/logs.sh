@@ -1,7 +1,10 @@
 #!/bin/bash
 
-# docker-logs.sh - View Docker service logs
+# logs.sh - View Docker service logs
 # This script allows you to view logs for specific Docker services.
+
+# Navigate to docker directory regardless of where script is called from
+cd "$(dirname "$0")/.."
 
 case "$1" in
     "app")
@@ -19,8 +22,21 @@ case "$1" in
     "queue")
         docker-compose logs -f queue
         ;;
+    "db")
+        docker-compose logs -f db
+        ;;
+    "redis")
+        docker-compose logs -f redis
+        ;;
+    "all")
+        docker-compose logs -f
+        ;;
     *)
-        echo "Usage: $0 {app|nginx|reverb|varnish|queue}"
-        echo "Or run: docker-compose logs -f [service]"
+        echo "Usage: $0 {app|nginx|reverb|varnish|queue|db|redis|all}"
+        echo ""
+        echo "Examples:"
+        echo "  ./docker/automation/logs.sh app      # Laravel app logs"
+        echo "  ./docker/automation/logs.sh reverb   # WebSocket logs"
+        echo "  ./docker/automation/logs.sh all      # All service logs"
         ;;
 esac

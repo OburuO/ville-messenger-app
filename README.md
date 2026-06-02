@@ -93,7 +93,7 @@ The easiest way to run Ville is using Docker. The entire stack — PHP, MySQL, R
 ```bash
 # Clone the repository
 git clone https://github.com/OburuO/ville-messenger-app.git
-cd ville-messenger-app/docker
+cd ville-messenger-app/docker/automation
 
 # Run the setup script (generates SSL certs, creates .env, sets permissions)
 chmod +x setup.sh
